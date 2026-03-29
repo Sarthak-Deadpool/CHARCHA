@@ -8,6 +8,7 @@ const userRoutes = require("./routes/userRoutes");
 const chatRoute = require("./routes/chatRoute");
 const messageRoute = require("./routes/messageRoute");
 const notificationRoute = require("./routes/notificationRoute");
+const path = require("path");
 
 const dns = require("dns");
 const { notFound, errorHandler } = require("./middlewares/middleWares");
@@ -21,14 +22,32 @@ const app = express();
 
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.send("API is Running");
-});
+
 
 app.use("/api/user", userRoutes);
 app.use("/api/chat", chatRoute);
 app.use("/api/message", messageRoute);
 app.use("/api/notification", notificationRoute);
+
+// -------------------------Deployment-------------------------
+
+const __dirname1 = path.resolve();
+
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname1, "frontend/build")));
+
+  app.get(/.*/, (req, res) => {
+    res.sendFile(path.resolve(__dirname1, "frontend", "build", "index.html"));
+  });
+}else{
+  app.get("/", (req, res) => {
+    res.send("API is Running");
+  });
+}
+
+
+
+// -------------------------Deployment-------------------------
 
 app.use(notFound);
 app.use(errorHandler);
@@ -53,7 +72,7 @@ io.on("connection", (socket) => {
 
   socket.on("join chat", (room) => {
     socket.join(room);
-    console.log("joint room " + room);
+    
   });
 
   socket.on("typing", (room) => socket.in(room).emit("typing"));
